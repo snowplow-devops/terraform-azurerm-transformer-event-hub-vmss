@@ -1,0 +1,16 @@
+sudo docker run \
+  -d \
+  --name transformer \
+  --restart always \
+  --network host \
+  --memory=$(get_application_memory_mb)m \
+  --log-opt max-size=10m \
+  --log-opt max-file=5 \
+  --env AZURE_TENANT_ID=${tenant_id} \
+  --env AZURE_CLIENT_ID=${client_id}  \
+  --env AZURE_CLIENT_SECRET=${client_secret} \
+  --env 'JAVA_OPTS=-Dconfig.override_with_env_vars=true ${java_opts}' \
+  --env "CONFIG_FORCE_telemetry_instanceId=$(get_instance_id)" \
+  snowplow/transformer-kafka:5.7.0-rc1-distroless \
+  --iglu-config ${iglu_config_b64} \
+  --config ${transformer_config_b64}

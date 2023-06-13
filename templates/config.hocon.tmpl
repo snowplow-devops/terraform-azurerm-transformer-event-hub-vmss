@@ -1,0 +1,24 @@
+{
+  "input": {
+    "topicName": "${enriched_event_hub_name}"
+    "bootstrapServers": "${event_hub_broker_string}" 
+    "consumerConf": {
+        "security.protocol": "SASL_SSL",
+        "sasl.mechanism": "PLAIN",
+        "sasl.jaas.config": "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"$ConnectionString\" password=\"${enriched_event_hub_connection_string}\";"
+    }
+  }
+  "output": {
+    "path": "https://${storage_account_name}.blob.core.windows.net/${storage_container_name}/"
+  }
+  "queue": {
+    "topicName": "${queue_event_hub_name}"
+    "bootstrapServers": "${event_hub_broker_string}"
+    "producerConf": {
+        "security.protocol": "SASL_SSL",
+        "sasl.mechanism": "PLAIN",
+        "sasl.jaas.config": "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"$ConnectionString\" password=\"${queue_event_hub_connection_string}\";"
+    }
+  }
+  "windowing": "${windowing}"
+}

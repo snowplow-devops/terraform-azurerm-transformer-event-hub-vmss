@@ -23,6 +23,9 @@ override.tf
 override.tf.json
 *_override.tf
 *_override.tf.json
+# Ignore any config files with suffix .test or .test.tf - local testing configs, may contain creds
+*.test
+*.test.tf
 
 # Credentials Files
 **/credentials.json
