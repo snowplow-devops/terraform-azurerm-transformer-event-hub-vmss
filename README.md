@@ -27,7 +27,7 @@ Transformer takes data from a enriched input topic and transforms this data and 
 ```hcl
 module "eh_namespace" {
   source  = "snowplow-devops/event-hub-namespace/azurerm"
-  version = "0.1.0"
+  version = "0.1.1"
 
   name                = "snowplow-pipeline"
   resource_group_name = var.resource_group_name
@@ -35,7 +35,7 @@ module "eh_namespace" {
 
 module "enriched_eh_topic" {
   source  = "snowplow-devops/event-hub/azurerm"
-  version = "0.1.0"
+  version = "0.1.1"
 
   name                = "enriched-topic"
   namespace_name      = module.eh_namespace.name
@@ -44,7 +44,7 @@ module "enriched_eh_topic" {
 
 module "queue_eh_topic" {
   source  = "snowplow-devops/event-hub/azurerm"
-  version = "0.1.0"
+  version = "0.1.1"
 
   name                = "queue-topic"
   namespace_name      = module.eh_namespace.name
@@ -53,7 +53,7 @@ module "queue_eh_topic" {
 
 module "storage_account" {
   source = "snowplow-devops/storage-account/azurerm"
-  version = "0.1.0"
+  version = "0.1.2"
 
   name                = "snowplow-storage"
   resource_group_name = var.resource_group_name
@@ -61,7 +61,7 @@ module "storage_account" {
 
 module "storage_container" {
   source = "snowplow-devops/storage-container/azurerm"
-  version = "0.1.0"
+  version = "0.1.1"
 
   name                 = "transformer-storage"
   storage_account_name = module.storage_account.name
@@ -175,10 +175,7 @@ module "transformer_service" {
 
 | Name | Description |
 |------|-------------|
-| <a name="output_iglu_config"></a> [iglu\_config](#output\_iglu\_config) | n/a |
-| <a name="output_loader_config"></a> [loader\_config](#output\_loader\_config) | n/a |
 | <a name="output_nsg_id"></a> [nsg\_id](#output\_nsg\_id) | ID of the network security group attached to the Transformer Server nodes |
-| <a name="output_user_data"></a> [user\_data](#output\_user\_data) | n/a |
 | <a name="output_vmss_id"></a> [vmss\_id](#output\_vmss\_id) | ID of the VM scale-set |
 
 # Copyright and license
