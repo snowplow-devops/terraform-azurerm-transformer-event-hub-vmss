@@ -203,4 +203,4 @@ limitations under the License.
 [registry-image]: https://img.shields.io/static/v1?label=Terraform&message=Registry&color=7B42BC&logo=terraform
 
 [source]: https://github.com/snowplow/snowplow-rdb-loader
-[source-image]: https://img.shields.io/static/v1?label=Snowplow&message=Transformer%20Kinesis&color=0E9BA4&logo=GitHub
+[source-image]: https://img.shields.io/static/v1?label=Snowplow&message=Transformer%20Kafka&color=0E9BA4&logo=GitHub
