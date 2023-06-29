@@ -19,12 +19,6 @@ variable "vm_sku" {
   default     = "Standard_B2s"
 }
 
-variable "vm_instance_count" {
-  description = "The instance count to use"
-  type        = number
-  default     = 1
-}
-
 variable "associate_public_ip_address" {
   description = "Whether to assign a public ip address to this instance"
   type        = bool
@@ -56,28 +50,33 @@ variable "java_opts" {
 
 # --- Configuration options
 
-variable "event_hub_broker_string" {
-  description = "Broker string for the enriched event hub's kafka protocol. Typically this value is {event_hub_namespave_name}.servicebus.windows.net:9093"
+variable "enriched_topic_name" {
+  description = "The name of the enriched Event Hubs topic that transformer will pull data from"
   type        = string
 }
 
-variable "enriched_event_hub_name" {
-  description = "Name of the enriched event hub stream"
+variable "enriched_topic_connection_string" {
+  description = "The connection string to use for reading from the enriched topic"
   type        = string
 }
 
-variable "enriched_event_hub_connection_string" {
-  description = "Connection string for the enriched event hub. Must permit read access at minimum"
+variable "queue_topic_name" {
+  description = "The name of the queue Event Hubs topic that the transformer will push messages to for the loader"
   type        = string
 }
 
-variable "queue_event_hub_name" {
-  description = "Name of the queue event hub stream"
+variable "queue_topic_connection_string" {
+  description = "The connection string to use for writing to the queue topic"
   type        = string
 }
 
-variable "queue_event_hub_connection_string" {
-  description = "Connection string for the queue event hub. Must permit write access at minimum"
+variable "eh_namespace_name" {
+  description = "The name of the Event Hubs namespace"
+  type        = string
+}
+
+variable "eh_namespace_broker" {
+  description = "The broker to configure for access to the Event Hubs namespace"
   type        = string
 }
 
@@ -91,25 +90,19 @@ variable "storage_container_name" {
   type        = string
 }
 
-variable "windowing" {
-  description = "Windowing period for the application. Configures how often we attempt to write to storage"
-  default     = "10 minutes"
-  type        = string
-
-  validation {
-    condition     = can(regex("\\d+ (ns|nano|nanos|nanosecond|nanoseconds|us|micro|micros|microsecond|microseconds|ms|milli|millis|millisecond|milliseconds|s|second|seconds|m|minute|minutes|h|hour|hours|d|day|days)", var.windowing))
-    error_message = "Invalid period formant."
-  }
-}
-
-variable "ouput_compression" {
-  description = "File compression for writing to Storage"
+variable "transformer_compression" {
+  description = "Transformer output compression, GZIP or NONE"
   default     = "GZIP"
   type        = string
 }
 
-variable "output_file_format" {
-  description = "Output file format - acceptable values are 'json' or 'parquet'"
+variable "window_period_min" {
+  description = "Frequency to emit loading finished message - 5,10,15,20,30,60 etc minutes"
+  type        = number
+}
+
+variable "widerow_file_format" {
+  description = "The output file_format from the widerow transformation_type selected (json or parquet)"
   default     = "json"
   type        = string
 }

@@ -11,6 +11,8 @@ sudo docker run \
   --env AZURE_CLIENT_SECRET=${client_secret} \
   --env 'JAVA_OPTS=-Dconfig.override_with_env_vars=true ${java_opts}' \
   --env "CONFIG_FORCE_telemetry_instanceId=$(get_instance_id)" \
-  snowplow/transformer-kafka:5.7.0-rc1-distroless \
+  snowplow/transformer-kafka:${version} \
   --iglu-config ${iglu_config_b64} \
-  --config ${transformer_config_b64}
+  --config ${config_b64}
+
+${telemetry_script}

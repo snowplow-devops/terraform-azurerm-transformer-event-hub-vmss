@@ -1,17 +1,18 @@
 locals {
-  name                    = "transformer-test"
-  resource_group_name     = "transformer-test-rg"
-  namespace_name          = "transformer-test-eh-namespace"
+  name                = "transformer-test"
+  resource_group_name = "transformer-test-rg"
+
+  eh_namespace_name       = "transformer-test-eh-namespace"
   enriched_event_hub_name = "transformer-test-eh-enriched"
   queue_event_hub_name    = "transformer-test-queue"
-  storage_account_name    = "transformertestsa"
-  storage_conatiner_name  = "transformer-test-container"
-  # Windowing is set to 1 minute here puurely for a fast test feedback loop
-  windowing      = "1 minute"
-  ssh_public_key = "PUBLIC_KEY"
-}
 
-## Resource dependencies:
+  storage_account_name   = "transformertestsa"
+  storage_container_name = "transformer-test-container"
+
+  # Windowing is set to 1 minute here purely for a fast test feedback loop
+  window_period_min = 1
+  ssh_public_key    = "PUBLIC_KEY"
+}
 
 resource "azurerm_resource_group" "group" {
   name     = local.resource_group_name
@@ -21,7 +22,7 @@ resource "azurerm_resource_group" "group" {
 module "eh_namespace" {
   source = "snowplow-devops/event-hub-namespace/azurerm"
 
-  name                = local.namespace_name
+  name                = local.eh_namespace_name
   resource_group_name = local.resource_group_name
 
   depends_on = [azurerm_resource_group.group]
@@ -57,7 +58,7 @@ module "storage_account" {
 module "storage_container" {
   source = "snowplow-devops/storage-container/azurerm"
 
-  name                 = local.storage_conatiner_name
+  name                 = local.storage_container_name
   storage_account_name = module.storage_account.name
 }
 
@@ -73,23 +74,27 @@ resource "azurerm_virtual_network" "vnet" {
   }
 }
 
-## Transformer service:
-
 module "transformer_service" {
   source = "../.."
 
-  name                                 = local.name
-  resource_group_name                  = local.resource_group_name
-  subnet_id                            = tolist(azurerm_virtual_network.vnet.subnet)[0].id
-  ssh_public_key                       = local.ssh_public_key
-  event_hub_broker_string              = "${module.eh_namespace.name}.servicebus.windows.net:9093"
-  enriched_event_hub_name              = local.enriched_event_hub_name
-  enriched_event_hub_connection_string = module.enriched_event_hub.read_write_primary_connection_string
-  queue_event_hub_name                 = module.queue_event_hub.name
-  queue_event_hub_connection_string    = module.queue_event_hub.read_write_primary_connection_string
-  storage_account_name                 = module.storage_account.name
-  storage_container_name               = module.storage_container.name
-  windowing                            = local.windowing
+  name                = local.name
+  resource_group_name = local.resource_group_name
+  subnet_id           = tolist(azurerm_virtual_network.vnet.subnet)[0].id
+
+  enriched_topic_name              = module.enriched_event_hub.name
+  enriched_topic_connection_string = module.enriched_event_hub.read_only_primary_connection_string
+  queue_topic_name                 = module.queue_event_hub.name
+  queue_topic_connection_string    = module.queue_event_hub.read_write_primary_connection_string
+  eh_namespace_name                = module.eh_namespace.name
+  eh_namespace_broker              = module.eh_namespace.broker
+
+  storage_account_name   = module.storage_account.name
+  storage_container_name = module.storage_container.name
+  window_period_min      = local.window_period_min
+
+  widerow_file_format = "json"
+
+  ssh_public_key = local.ssh_public_key
 
   depends_on = [azurerm_resource_group.group, module.storage_container, module.storage_account]
 }
