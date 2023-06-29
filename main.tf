@@ -4,7 +4,7 @@ locals {
 
   app_name = "transformer-kafka"
   # TODO: Change once 5.7.0 is published
-  app_version = "5.7.0-rc1-distroless"
+  app_version = "5.7.0-rc3"
 
   local_tags = {
     Name           = var.name
@@ -106,7 +106,7 @@ resource "azurerm_network_security_rule" "egress_udp_123" {
   network_security_group_name = azurerm_network_security_group.nsg.name
 }
 
-# --- Authentication & Credentials
+# --- IAM: Authentication & Credentials
 
 # Lookup current user
 data "azuread_client_config" "current" {}
@@ -138,13 +138,104 @@ resource "azurerm_role_assignment" "transformer_app_ra" {
   principal_id         = azuread_service_principal.transformer_sp.object_id
 }
 
-# --- VMSS Transformer Service
+# --- EventHubs: Consumer Groups
+
+resource "azurerm_eventhub_consumer_group" "enriched_topic" {
+  name = var.name
+
+  namespace_name      = var.eh_namespace_name
+  eventhub_name       = var.enriched_topic_name
+  resource_group_name = var.resource_group_name
+}
+
+# --- Compute: VM scale-set deployment
+
+locals {
+  resolvers_raw = concat(var.default_iglu_resolvers, var.custom_iglu_resolvers)
+
+  resolvers_public = [
+    for resolver in local.resolvers_raw : merge(
+      {
+        name           = resolver["name"],
+        priority       = resolver["priority"],
+        vendorPrefixes = resolver["vendor_prefixes"],
+        connection = {
+          http = {
+            uri = resolver["uri"]
+          }
+        }
+      }
+    ) if resolver["api_key"] == ""
+  ]
+
+  resolvers_private = [
+    for resolver in local.resolvers_raw : merge(
+      {
+        name           = resolver["name"],
+        priority       = resolver["priority"],
+        vendorPrefixes = resolver["vendor_prefixes"],
+        connection = {
+          http = {
+            uri    = resolver["uri"]
+            apikey = resolver["api_key"]
+          }
+        }
+      }
+    ) if resolver["api_key"] != ""
+  ]
+
+  resolvers = flatten([
+    local.resolvers_public,
+    local.resolvers_private
+  ])
+
+  iglu_config = templatefile("${path.module}/templates/iglu_config.json.tmpl", { resolvers = jsonencode(local.resolvers) })
+
+  config = templatefile("${path.module}/templates/config.hocon.tmpl", {
+    enriched_topic_name              = var.enriched_topic_name
+    enriched_topic_connection_string = var.enriched_topic_connection_string
+    enriched_group_id                = azurerm_eventhub_consumer_group.enriched_topic.name
+    queue_topic_name                 = var.queue_topic_name
+    queue_topic_connection_string    = var.queue_topic_connection_string
+
+    eh_namespace_broker = var.eh_namespace_broker
+
+    storage_account_name   = var.storage_account_name
+    storage_container_name = var.storage_container_name
+    compression            = var.transformer_compression
+
+    window_period       = "${var.window_period_min} minutes"
+    widerow_file_format = var.widerow_file_format
+
+    telemetry_disable          = !var.telemetry_enabled
+    telemetry_collector_uri    = join("", module.telemetry.*.collector_uri)
+    telemetry_collector_port   = 443
+    telemetry_secure           = true
+    telemetry_user_provided_id = var.user_provided_id
+    telemetry_auto_gen_id      = join("", module.telemetry.*.auto_generated_id)
+    telemetry_module_name      = local.module_name
+    telemetry_module_version   = local.module_version
+  })
+
+  user_data = templatefile("${path.module}/templates/user-data.sh.tmpl", {
+    tenant_id     = azuread_service_principal.transformer_sp.application_tenant_id
+    client_id     = azuread_application.transformer_app_registration.application_id
+    client_secret = azuread_application_password.transformer_app_pasword.value
+
+    config_b64      = base64encode(local.config)
+    version         = local.app_version
+    iglu_config_b64 = base64encode(local.iglu_config)
+
+    telemetry_script = join("", module.telemetry.*.azurerm_ubuntu_22_04_user_data)
+
+    java_opts = var.java_opts
+  })
+}
 
 module "service" {
   source  = "snowplow-devops/service-vmss/azurerm"
   version = "0.1.0"
 
-  # Config is passed via user data script - both defined in config.tf
   user_supplied_script = local.user_data
   name                 = var.name
   resource_group_name  = var.resource_group_name
@@ -155,7 +246,7 @@ module "service" {
   admin_ssh_public_key        = var.ssh_public_key
 
   sku            = var.vm_sku
-  instance_count = var.vm_instance_count
+  instance_count = 1
 
   tags = local.tags
 }

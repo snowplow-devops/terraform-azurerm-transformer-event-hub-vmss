@@ -2,7 +2,9 @@
 
 # terraform-azurerm-transformer-event-hub-vmss
 
-A Terraform module which deploys Snowplow Enrich service on VMSS.
+A Terraform module which deploys the Transformer EventHub service on VMSS.
+
+*WARNING:* Due to the ability to introduce large numbers of duplicates when scaling this application horizontally we lock the application to a single instance - if you need more throughput from this application you will need to "vertically" scale it by changing the `vm_sku` to a large node type and re-applying the module.  By default this is a `Standard_B2s` which should handle over 100 RPS without needing any scale-up.
 
 ## Telemetry
 
@@ -23,20 +25,79 @@ For details on what information is collected please see this module: https://git
 Transformer takes data from a enriched input topic and transforms this data and writes it into Cloud Storage. There are two type of transformations - Wide row JSON, and Wide row Parquet. When wide row JSON is activated, it only converts event to JSON format. When Wide row Parquet is activated, it converts the event to Parquet format.
 
 ```hcl
+module "eh_namespace" {
+  source  = "snowplow-devops/event-hub-namespace/azurerm"
+  version = "0.1.0"
+
+  name                = "snowplow-pipeline"
+  resource_group_name = var.resource_group_name
+}
+
+module "enriched_eh_topic" {
+  source  = "snowplow-devops/event-hub/azurerm"
+  version = "0.1.0"
+
+  name                = "enriched-topic"
+  namespace_name      = module.eh_namespace.name
+  resource_group_name = var.resource_group_name
+}
+
+module "queue_eh_topic" {
+  source  = "snowplow-devops/event-hub/azurerm"
+  version = "0.1.0"
+
+  name                = "queue-topic"
+  namespace_name      = module.eh_namespace.name
+  resource_group_name = var.resource_group_name
+}
+
+module "storage_account" {
+  source = "snowplow-devops/storage-account/azurerm"
+  version = "0.1.0"
+
+  name                = "snowplow-storage"
+  resource_group_name = var.resource_group_name
+}
+
+module "storage_container" {
+  source = "snowplow-devops/storage-container/azurerm"
+  version = "0.1.0"
+
+  name                 = "transformer-storage"
+  storage_account_name = module.storage_account.name
+}
+
 module "transformer_service" {
   source = "snowplow-devops/transformer-event-hub-vmss/azurerm"
 
-  name                                 = local.name
-  resource_group_name                  = local.resource_group_name
-  subnet_id                            = local.subnet_id
-  ssh_public_key                       = local.ssh_public_key
-  event_hub_broker_string              = "${local.eh_namespace_name}.servicebus.windows.net:9093"
-  enriched_event_hub_name              = local.enriched_event_hub_name
-  enriched_event_hub_connection_string = local.enriched_event_hub_connection_string
-  queue_event_hub_name                 = local.queue_event_hub.name
-  queue_event_hub_connection_string    = local.queue_event_hub_connection_string
-  storage_account_name                 = local.storage_account_name
-  storage_container_name               = local.storage_container_name
+  name                = "transformer-server"
+  resource_group_name = var.resource_group_name
+  subnet_id           = var.subnet_id_for_servers
+
+  enriched_topic_name              = module.enriched_eh_topic.name
+  enriched_topic_connection_string = module.enriched_eh_topic.read_only_primary_connection_string
+  queue_topic_name                 = module.queue_eh_topic.name
+  queue_topic_connection_string    = module.queue_eh_topic.read_write_primary_connection_string
+  eh_namespace_name                = module.eh_namespace.name
+  eh_namespace_broker              = module.eh_namespace.broker
+
+  storage_account_name   = module.storage_account.name
+  storage_container_name = module.storage_container.name
+  window_period_min      = 10
+
+  ssh_public_key   = "your-public-key-here"
+  ssh_ip_allowlist = ["0.0.0.0/0"]
+
+  # Linking in the custom Iglu Server here
+  custom_iglu_resolvers = [
+    {
+      name            = "Iglu Server"
+      priority        = 0
+      uri             = "http://your-iglu-server-endpoint/api"
+      api_key         = var.iglu_super_api_key
+      vendor_prefixes = []
+    }
+  ]
 }
 ```
 
@@ -45,15 +106,15 @@ module "transformer_service" {
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.0.0 |
-| <a name="requirement_azuread"></a> [azuread](#requirement\_azuread) | ~> 2.39.0 |
+| <a name="requirement_azuread"></a> [azuread](#requirement\_azuread) | >= 2.39.0 |
 | <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) | >= 3.58.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_azuread"></a> [azuread](#provider\_azuread) | 2.39.0 |
-| <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | 3.61.0 |
+| <a name="provider_azuread"></a> [azuread](#provider\_azuread) | >= 2.39.0 |
+| <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | >= 3.58.0 |
 
 ## Modules
 
@@ -69,6 +130,7 @@ module "transformer_service" {
 | [azuread_application.transformer_app_registration](https://registry.terraform.io/providers/hashicorp/azuread/latest/docs/resources/application) | resource |
 | [azuread_application_password.transformer_app_pasword](https://registry.terraform.io/providers/hashicorp/azuread/latest/docs/resources/application_password) | resource |
 | [azuread_service_principal.transformer_sp](https://registry.terraform.io/providers/hashicorp/azuread/latest/docs/resources/service_principal) | resource |
+| [azurerm_eventhub_consumer_group.enriched_topic](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/eventhub_consumer_group) | resource |
 | [azurerm_network_security_group.nsg](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_security_group) | resource |
 | [azurerm_network_security_rule.egress_tcp_443](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_security_rule) | resource |
 | [azurerm_network_security_rule.egress_tcp_80](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_security_rule) | resource |
@@ -83,17 +145,19 @@ module "transformer_service" {
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_enriched_event_hub_connection_string"></a> [enriched\_event\_hub\_connection\_string](#input\_enriched\_event\_hub\_connection\_string) | Connection string for the enriched event hub. Must permit read access at minimum | `string` | n/a | yes |
-| <a name="input_enriched_event_hub_name"></a> [enriched\_event\_hub\_name](#input\_enriched\_event\_hub\_name) | Name of the enriched event hub stream | `string` | n/a | yes |
-| <a name="input_event_hub_broker_string"></a> [event\_hub\_broker\_string](#input\_event\_hub\_broker\_string) | Broker string for the enriched event hub's kafka protocol. Typically this value is {event\_hub\_namespave\_name}.servicebus.windows.net:9093 | `string` | n/a | yes |
+| <a name="input_eh_namespace_broker"></a> [eh\_namespace\_broker](#input\_eh\_namespace\_broker) | The broker to configure for access to the Event Hubs namespace | `string` | n/a | yes |
+| <a name="input_eh_namespace_name"></a> [eh\_namespace\_name](#input\_eh\_namespace\_name) | The name of the Event Hubs namespace | `string` | n/a | yes |
+| <a name="input_enriched_topic_connection_string"></a> [enriched\_topic\_connection\_string](#input\_enriched\_topic\_connection\_string) | The connection string to use for reading from the enriched topic | `string` | n/a | yes |
+| <a name="input_enriched_topic_name"></a> [enriched\_topic\_name](#input\_enriched\_topic\_name) | The name of the enriched Event Hubs topic that transformer will pull data from | `string` | n/a | yes |
 | <a name="input_name"></a> [name](#input\_name) | A name which will be pre-pended to the resources created | `string` | n/a | yes |
-| <a name="input_queue_event_hub_connection_string"></a> [queue\_event\_hub\_connection\_string](#input\_queue\_event\_hub\_connection\_string) | Connection string for the queue event hub. Must permit write access at minimum | `string` | n/a | yes |
-| <a name="input_queue_event_hub_name"></a> [queue\_event\_hub\_name](#input\_queue\_event\_hub\_name) | Name of the queue event hub stream | `string` | n/a | yes |
+| <a name="input_queue_topic_connection_string"></a> [queue\_topic\_connection\_string](#input\_queue\_topic\_connection\_string) | The connection string to use for writing to the queue topic | `string` | n/a | yes |
+| <a name="input_queue_topic_name"></a> [queue\_topic\_name](#input\_queue\_topic\_name) | The name of the queue Event Hubs topic that the transformer will push messages to for the loader | `string` | n/a | yes |
 | <a name="input_resource_group_name"></a> [resource\_group\_name](#input\_resource\_group\_name) | The name of the resource group to deploy the service into | `string` | n/a | yes |
 | <a name="input_ssh_public_key"></a> [ssh\_public\_key](#input\_ssh\_public\_key) | The SSH public key attached for access to the servers | `string` | n/a | yes |
 | <a name="input_storage_account_name"></a> [storage\_account\_name](#input\_storage\_account\_name) | Name of the output storage account | `string` | n/a | yes |
 | <a name="input_storage_container_name"></a> [storage\_container\_name](#input\_storage\_container\_name) | Name of the output storage container | `string` | n/a | yes |
 | <a name="input_subnet_id"></a> [subnet\_id](#input\_subnet\_id) | The subnet id to deploy the service into | `string` | n/a | yes |
+| <a name="input_window_period_min"></a> [window\_period\_min](#input\_window\_period\_min) | Frequency to emit loading finished message - 5,10,15,20,30,60 etc minutes | `number` | n/a | yes |
 | <a name="input_associate_public_ip_address"></a> [associate\_public\_ip\_address](#input\_associate\_public\_ip\_address) | Whether to assign a public ip address to this instance | `bool` | `true` | no |
 | <a name="input_custom_iglu_resolvers"></a> [custom\_iglu\_resolvers](#input\_custom\_iglu\_resolvers) | The custom Iglu Resolvers that will be used by Enrichment to resolve and validate events | <pre>list(object({<br>    name            = string<br>    priority        = number<br>    uri             = string<br>    api_key         = string<br>    vendor_prefixes = list(string)<br>  }))</pre> | `[]` | no |
 | <a name="input_default_iglu_resolvers"></a> [default\_iglu\_resolvers](#input\_default\_iglu\_resolvers) | The default Iglu Resolvers that will be used by Enrichment to resolve and validate events | <pre>list(object({<br>    name            = string<br>    priority        = number<br>    uri             = string<br>    api_key         = string<br>    vendor_prefixes = list(string)<br>  }))</pre> | <pre>[<br>  {<br>    "api_key": "",<br>    "name": "Iglu Central",<br>    "priority": 10,<br>    "uri": "http://iglucentral.com",<br>    "vendor_prefixes": []<br>  },<br>  {<br>    "api_key": "",<br>    "name": "Iglu Central - Mirror 01",<br>    "priority": 20,<br>    "uri": "http://mirror01.iglucentral.com",<br>    "vendor_prefixes": []<br>  }<br>]</pre> | no |
@@ -101,10 +165,10 @@ module "transformer_service" {
 | <a name="input_ssh_ip_allowlist"></a> [ssh\_ip\_allowlist](#input\_ssh\_ip\_allowlist) | The comma-seperated list of CIDR ranges to allow SSH traffic from | `list(string)` | <pre>[<br>  "0.0.0.0/0"<br>]</pre> | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | The tags to append to this resource | `map(string)` | `{}` | no |
 | <a name="input_telemetry_enabled"></a> [telemetry\_enabled](#input\_telemetry\_enabled) | Whether or not to send telemetry information back to Snowplow Analytics Ltd | `bool` | `true` | no |
+| <a name="input_transformer_compression"></a> [transformer\_compression](#input\_transformer\_compression) | Transformer output compression, GZIP or NONE | `string` | `"GZIP"` | no |
 | <a name="input_user_provided_id"></a> [user\_provided\_id](#input\_user\_provided\_id) | An optional unique identifier to identify the telemetry events emitted by this stack | `string` | `""` | no |
-| <a name="input_vm_instance_count"></a> [vm\_instance\_count](#input\_vm\_instance\_count) | The instance count to use | `number` | `1` | no |
 | <a name="input_vm_sku"></a> [vm\_sku](#input\_vm\_sku) | The instance type to use | `string` | `"Standard_B2s"` | no |
-| <a name="input_windowing"></a> [windowing](#input\_windowing) | Windowing period for the application. Configures how often we attempt to write to storage | `string` | `"10 minutes"` | no |
+| <a name="input_widerow_file_format"></a> [widerow\_file\_format](#input\_widerow\_file\_format) | The output file\_format from the widerow transformation\_type selected (json or parquet) | `string` | `"json"` | no |
 
 ## Outputs
 
