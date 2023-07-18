@@ -23,7 +23,7 @@ sudo docker run \
   --env AZURE_CLIENT_ID=${client_id}  \
   --env AZURE_CLIENT_SECRET=${client_secret} \
   --env JDK_JAVA_OPTIONS='${java_opts}' \
-  --env "CONFIG_FORCE_telemetry_instanceId=$(get_instance_id)" \
+  --env INSTANCE_ID=$(get_instance_id) \
   snowplow/transformer-kafka:${version} \
   --iglu-config /snowplow/config/iglu_config.json \
   --config /snowplow/config/config.hocon
