@@ -12,7 +12,7 @@ locals {
   # Windowing is set to 1 minute here purely for a fast test feedback loop
   window_period_min = 1
   ssh_public_key    = "PUBLIC_KEY"
-  user_provided_id = "transformer-module-example@snowplow.io"
+  user_provided_id  = "transformer-module-example@snowplow.io"
 }
 
 resource "azurerm_resource_group" "group" {
