@@ -8,6 +8,12 @@ variable "resource_group_name" {
   type        = string
 }
 
+variable "app_version" {
+  description = "Transformer app version to use. This variable facilitates dev flow, the modules may not work with anything other than the default value."
+  type        = string
+  default     = "5.7.0"
+}
+
 variable "subnet_id" {
   description = "The subnet id to deploy the service into"
   type        = string

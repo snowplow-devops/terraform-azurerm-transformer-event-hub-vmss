@@ -3,8 +3,9 @@ locals {
   module_version = "0.1.0"
 
   app_name = "transformer-kafka"
-  # TODO: Change once 5.7.0 is published
-  app_version = "5.7.0-rc3"
+
+  # We pass this var to a local purely to facilitate using rc assets in development
+  app_version = var.app_version
 
   local_tags = {
     Name           = var.name
