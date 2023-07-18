@@ -1,3 +1,15 @@
+readonly CONFIG_DIR=/opt/snowplow/config
+
+sudo mkdir -p $${CONFIG_DIR}
+
+sudo base64 --decode << EOF > $${CONFIG_DIR}/config.hocon
+${config_b64}
+EOF
+
+sudo base64 --decode << EOF > $${CONFIG_DIR}/iglu_config.json
+${iglu_config_b64}
+EOF
+
 sudo docker run \
   -d \
   --name transformer \
@@ -6,13 +18,14 @@ sudo docker run \
   --memory=$(get_application_memory_mb)m \
   --log-opt max-size=10m \
   --log-opt max-file=5 \
+  --mount type=bind,source=$${CONFIG_DIR},target=/snowplow/config \
   --env AZURE_TENANT_ID=${tenant_id} \
   --env AZURE_CLIENT_ID=${client_id}  \
   --env AZURE_CLIENT_SECRET=${client_secret} \
   --env JDK_JAVA_OPTIONS='${java_opts}' \
   --env "CONFIG_FORCE_telemetry_instanceId=$(get_instance_id)" \
   snowplow/transformer-kafka:${version} \
-  --iglu-config ${iglu_config_b64} \
-  --config ${config_b64}
+  --iglu-config /snowplow/config/iglu_config.json \
+  --config /snowplow/config/config.hocon
 
 ${telemetry_script}
