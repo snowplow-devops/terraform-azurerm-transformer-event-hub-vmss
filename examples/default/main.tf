@@ -12,6 +12,7 @@ locals {
   # Windowing is set to 1 minute here purely for a fast test feedback loop
   window_period_min = 1
   ssh_public_key    = "PUBLIC_KEY"
+  user_provided_id = "transformer-module-example@snowplow.io"
 }
 
 resource "azurerm_resource_group" "group" {
@@ -95,6 +96,8 @@ module "transformer_service" {
   widerow_file_format = "json"
 
   ssh_public_key = local.ssh_public_key
+
+  user_provided_id = local.user_provided_id
 
   depends_on = [azurerm_resource_group.group, module.storage_container, module.storage_account]
 }
