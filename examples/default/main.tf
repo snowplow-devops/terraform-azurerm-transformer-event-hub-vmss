@@ -21,7 +21,8 @@ resource "azurerm_resource_group" "group" {
 }
 
 module "eh_namespace" {
-  source = "snowplow-devops/event-hub-namespace/azurerm"
+  source  = "snowplow-devops/event-hub-namespace/azurerm"
+  version = "0.1.1"
 
   name                = local.eh_namespace_name
   resource_group_name = local.resource_group_name
@@ -30,7 +31,8 @@ module "eh_namespace" {
 }
 
 module "enriched_event_hub" {
-  source = "snowplow-devops/event-hub/azurerm"
+  source  = "snowplow-devops/event-hub/azurerm"
+  version = "0.1.1"
 
   name                = local.enriched_event_hub_name
   namespace_name      = module.eh_namespace.name
@@ -39,7 +41,8 @@ module "enriched_event_hub" {
 }
 
 module "queue_event_hub" {
-  source = "snowplow-devops/event-hub/azurerm"
+  source  = "snowplow-devops/event-hub/azurerm"
+  version = "0.1.1"
 
   name                = local.queue_event_hub_name
   namespace_name      = module.eh_namespace.name
@@ -48,7 +51,8 @@ module "queue_event_hub" {
 }
 
 module "storage_account" {
-  source = "snowplow-devops/storage-account/azurerm"
+  source  = "snowplow-devops/storage-account/azurerm"
+  version = "0.1.2"
 
   name                = local.storage_account_name
   resource_group_name = azurerm_resource_group.group.name
@@ -57,7 +61,8 @@ module "storage_account" {
 }
 
 module "storage_container" {
-  source = "snowplow-devops/storage-container/azurerm"
+  source  = "snowplow-devops/storage-container/azurerm"
+  version = "0.1.1"
 
   name                 = local.storage_container_name
   storage_account_name = module.storage_account.name
