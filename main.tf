@@ -1,6 +1,6 @@
 locals {
   module_name    = "transformer-event-hub-vmss"
-  module_version = "0.1.0"
+  module_version = "0.1.1"
 
   app_name = "transformer-kafka"
 
