@@ -61,8 +61,14 @@ variable "enriched_topic_name" {
   type        = string
 }
 
-variable "enriched_topic_connection_string" {
-  description = "The connection string to use for reading from the enriched topic"
+variable "enriched_topic_kafka_username" {
+  description = "Username for connection to Kafka cluster under PlainLoginModule (default: '$ConnectionString' which is used for EventHubs)"
+  type        = string
+  default     = "$ConnectionString"
+}
+
+variable "enriched_topic_kafka_password" {
+  description = "Password for connection to Kafka cluster under PlainLoginModule (note: as default the EventHubs topic connection string for reading is expected)"
   type        = string
 }
 
@@ -71,18 +77,25 @@ variable "queue_topic_name" {
   type        = string
 }
 
-variable "queue_topic_connection_string" {
-  description = "The connection string to use for writing to the queue topic"
+variable "queue_topic_kafka_username" {
+  description = "Username for connection to Kafka cluster under PlainLoginModule (default: '$ConnectionString' which is used for EventHubs)"
+  type        = string
+  default     = "$ConnectionString"
+}
+
+variable "queue_topic_kafka_password" {
+  description = "Password for connection to Kafka cluster under PlainLoginModule (note: as default the EventHubs topic connection string for writing is expected)"
   type        = string
 }
 
 variable "eh_namespace_name" {
-  description = "The name of the Event Hubs namespace"
+  description = "The name of the Event Hubs namespace (note: if you are not using EventHubs leave this blank)"
   type        = string
+  default     = ""
 }
 
-variable "eh_namespace_broker" {
-  description = "The broker to configure for access to the Event Hubs namespace"
+variable "kafka_brokers" {
+  description = "The brokers to configure for access to the Kafka Cluster (note: as default the EventHubs namespace broker)"
   type        = string
 }
 

@@ -74,12 +74,12 @@ module "transformer_service" {
   resource_group_name = var.resource_group_name
   subnet_id           = var.subnet_id_for_servers
 
-  enriched_topic_name              = module.enriched_eh_topic.name
-  enriched_topic_connection_string = module.enriched_eh_topic.read_only_primary_connection_string
-  queue_topic_name                 = module.queue_eh_topic.name
-  queue_topic_connection_string    = module.queue_eh_topic.read_write_primary_connection_string
-  eh_namespace_name                = module.eh_namespace.name
-  eh_namespace_broker              = module.eh_namespace.broker
+  enriched_topic_name           = module.enriched_eh_topic.name
+  enriched_topic_kafka_password = module.enriched_eh_topic.read_only_primary_connection_string
+  queue_topic_name              = module.queue_eh_topic.name
+  queue_topic_kafka_password    = module.queue_eh_topic.read_write_primary_connection_string
+  eh_namespace_name             = module.eh_namespace.name
+  kafka_brokers                 = module.eh_namespace.broker
 
   storage_account_name   = module.storage_account.name
   storage_container_name = module.storage_container.name
@@ -145,12 +145,11 @@ module "transformer_service" {
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_eh_namespace_broker"></a> [eh\_namespace\_broker](#input\_eh\_namespace\_broker) | The broker to configure for access to the Event Hubs namespace | `string` | n/a | yes |
-| <a name="input_eh_namespace_name"></a> [eh\_namespace\_name](#input\_eh\_namespace\_name) | The name of the Event Hubs namespace | `string` | n/a | yes |
-| <a name="input_enriched_topic_connection_string"></a> [enriched\_topic\_connection\_string](#input\_enriched\_topic\_connection\_string) | The connection string to use for reading from the enriched topic | `string` | n/a | yes |
+| <a name="input_enriched_topic_kafka_password"></a> [enriched\_topic\_kafka\_password](#input\_enriched\_topic\_kafka\_password) | Password for connection to Kafka cluster under PlainLoginModule (note: as default the EventHubs topic connection string for reading is expected) | `string` | n/a | yes |
 | <a name="input_enriched_topic_name"></a> [enriched\_topic\_name](#input\_enriched\_topic\_name) | The name of the enriched Event Hubs topic that transformer will pull data from | `string` | n/a | yes |
+| <a name="input_kafka_brokers"></a> [kafka\_brokers](#input\_kafka\_brokers) | The brokers to configure for access to the Kafka Cluster (note: as default the EventHubs namespace broker) | `string` | n/a | yes |
 | <a name="input_name"></a> [name](#input\_name) | A name which will be pre-pended to the resources created | `string` | n/a | yes |
-| <a name="input_queue_topic_connection_string"></a> [queue\_topic\_connection\_string](#input\_queue\_topic\_connection\_string) | The connection string to use for writing to the queue topic | `string` | n/a | yes |
+| <a name="input_queue_topic_kafka_password"></a> [queue\_topic\_kafka\_password](#input\_queue\_topic\_kafka\_password) | Password for connection to Kafka cluster under PlainLoginModule (note: as default the EventHubs topic connection string for writing is expected) | `string` | n/a | yes |
 | <a name="input_queue_topic_name"></a> [queue\_topic\_name](#input\_queue\_topic\_name) | The name of the queue Event Hubs topic that the transformer will push messages to for the loader | `string` | n/a | yes |
 | <a name="input_resource_group_name"></a> [resource\_group\_name](#input\_resource\_group\_name) | The name of the resource group to deploy the service into | `string` | n/a | yes |
 | <a name="input_ssh_public_key"></a> [ssh\_public\_key](#input\_ssh\_public\_key) | The SSH public key attached for access to the servers | `string` | n/a | yes |
@@ -162,7 +161,10 @@ module "transformer_service" {
 | <a name="input_associate_public_ip_address"></a> [associate\_public\_ip\_address](#input\_associate\_public\_ip\_address) | Whether to assign a public ip address to this instance | `bool` | `true` | no |
 | <a name="input_custom_iglu_resolvers"></a> [custom\_iglu\_resolvers](#input\_custom\_iglu\_resolvers) | The custom Iglu Resolvers that will be used by Enrichment to resolve and validate events | <pre>list(object({<br>    name            = string<br>    priority        = number<br>    uri             = string<br>    api_key         = string<br>    vendor_prefixes = list(string)<br>  }))</pre> | `[]` | no |
 | <a name="input_default_iglu_resolvers"></a> [default\_iglu\_resolvers](#input\_default\_iglu\_resolvers) | The default Iglu Resolvers that will be used by Enrichment to resolve and validate events | <pre>list(object({<br>    name            = string<br>    priority        = number<br>    uri             = string<br>    api_key         = string<br>    vendor_prefixes = list(string)<br>  }))</pre> | <pre>[<br>  {<br>    "api_key": "",<br>    "name": "Iglu Central",<br>    "priority": 10,<br>    "uri": "http://iglucentral.com",<br>    "vendor_prefixes": []<br>  },<br>  {<br>    "api_key": "",<br>    "name": "Iglu Central - Mirror 01",<br>    "priority": 20,<br>    "uri": "http://mirror01.iglucentral.com",<br>    "vendor_prefixes": []<br>  }<br>]</pre> | no |
+| <a name="input_eh_namespace_name"></a> [eh\_namespace\_name](#input\_eh\_namespace\_name) | The name of the Event Hubs namespace (note: if you are not using EventHubs leave this blank) | `string` | `""` | no |
+| <a name="input_enriched_topic_kafka_username"></a> [enriched\_topic\_kafka\_username](#input\_enriched\_topic\_kafka\_username) | Username for connection to Kafka cluster under PlainLoginModule (default: '$ConnectionString' which is used for EventHubs) | `string` | `"$ConnectionString"` | no |
 | <a name="input_java_opts"></a> [java\_opts](#input\_java\_opts) | Custom JAVA Options | `string` | `"-XX:InitialRAMPercentage=75 -XX:MaxRAMPercentage=75"` | no |
+| <a name="input_queue_topic_kafka_username"></a> [queue\_topic\_kafka\_username](#input\_queue\_topic\_kafka\_username) | Username for connection to Kafka cluster under PlainLoginModule (default: '$ConnectionString' which is used for EventHubs) | `string` | `"$ConnectionString"` | no |
 | <a name="input_ssh_ip_allowlist"></a> [ssh\_ip\_allowlist](#input\_ssh\_ip\_allowlist) | The comma-seperated list of CIDR ranges to allow SSH traffic from | `list(string)` | <pre>[<br>  "0.0.0.0/0"<br>]</pre> | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | The tags to append to this resource | `map(string)` | `{}` | no |
 | <a name="input_telemetry_enabled"></a> [telemetry\_enabled](#input\_telemetry\_enabled) | Whether or not to send telemetry information back to Snowplow Analytics Ltd | `bool` | `true` | no |

@@ -2,11 +2,12 @@
   "input": {
     "type": "kafka"
     "topicName": "${enriched_topic_name}"
-    "bootstrapServers": "${eh_namespace_broker}" 
+    "bootstrapServers": "${kafka_brokers}" 
     "consumerConf": {
+      "client.id": $${CONSUMER_CLIENT_ID},
       "security.protocol": "SASL_SSL",
       "sasl.mechanism": "PLAIN",
-      "sasl.jaas.config": "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"$ConnectionString\" password=\"${enriched_topic_connection_string}\";"
+      "sasl.jaas.config": "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"${enriched_topic_kafka_username}\" password=\"${enriched_topic_kafka_password}\";"
       "group.id": "${enriched_group_id}"
     }
   }
@@ -27,11 +28,12 @@
   "queue": {
     "type": "kafka"
     "topicName": "${queue_topic_name}"
-    "bootstrapServers": "${eh_namespace_broker}"
+    "bootstrapServers": "${kafka_brokers}"
     "producerConf": {
+      "client.id": $${PRODUCER_QUEUE_CLIENT_ID},
       "security.protocol": "SASL_SSL",
       "sasl.mechanism": "PLAIN",
-      "sasl.jaas.config": "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"$ConnectionString\" password=\"${queue_topic_connection_string}\";"
+      "sasl.jaas.config": "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"${queue_topic_kafka_username}\" password=\"${queue_topic_kafka_password}\";"
     }
   }
 
