@@ -142,6 +142,8 @@ resource "azurerm_role_assignment" "transformer_app_ra" {
 # --- EventHubs: Consumer Groups
 
 resource "azurerm_eventhub_consumer_group" "enriched_topic" {
+  count = var.eh_namespace_name != "" ? 1 : 0
+
   name = var.name
 
   namespace_name      = var.eh_namespace_name
@@ -193,13 +195,15 @@ locals {
   iglu_config = templatefile("${path.module}/templates/iglu_config.json.tmpl", { resolvers = jsonencode(local.resolvers) })
 
   config = templatefile("${path.module}/templates/config.hocon.tmpl", {
-    enriched_topic_name              = var.enriched_topic_name
-    enriched_topic_connection_string = var.enriched_topic_connection_string
-    enriched_group_id                = azurerm_eventhub_consumer_group.enriched_topic.name
-    queue_topic_name                 = var.queue_topic_name
-    queue_topic_connection_string    = var.queue_topic_connection_string
+    enriched_topic_name           = var.enriched_topic_name
+    enriched_topic_kafka_username = var.enriched_topic_kafka_username
+    enriched_topic_kafka_password = var.enriched_topic_kafka_password
+    enriched_group_id             = coalesce(join("", azurerm_eventhub_consumer_group.enriched_topic.*.name), var.name)
+    queue_topic_name              = var.queue_topic_name
+    queue_topic_kafka_username    = var.queue_topic_kafka_username
+    queue_topic_kafka_password    = var.queue_topic_kafka_password
 
-    eh_namespace_broker = var.eh_namespace_broker
+    kafka_brokers = var.kafka_brokers
 
     storage_account_name   = var.storage_account_name
     storage_container_name = var.storage_container_name

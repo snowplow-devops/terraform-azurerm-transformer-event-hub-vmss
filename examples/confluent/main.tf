@@ -6,41 +6,21 @@ locals {
   window_period_min = 1
   ssh_public_key    = "PUBLIC_KEY"
   user_provided_id  = "transformer-module-example@snowplow.io"
+
+  # This is your cluster "Bootstrap Server"
+  kafka_brokers = "<SET_ME>"
+  # This is your cluster API Key (Key + Secret)
+  kafka_username = "<SET_ME>"
+  kafka_password = "<SET_ME>"
+
+  # Default names for topics (note: change if you used different denominations)
+  enriched_topic_name = "enriched"
+  queue_topic_name    = "queue"
 }
 
 resource "azurerm_resource_group" "rg" {
   name     = "${local.name}-rg"
   location = "North Europe"
-}
-
-module "eh_namespace" {
-  source  = "snowplow-devops/event-hub-namespace/azurerm"
-  version = "0.1.1"
-
-  name                = "${local.name}-ehn"
-  resource_group_name = azurerm_resource_group.rg.name
-
-  depends_on = [azurerm_resource_group.rg]
-}
-
-module "enriched_event_hub" {
-  source  = "snowplow-devops/event-hub/azurerm"
-  version = "0.1.1"
-
-  name                = "${local.name}-enriched-topic"
-  namespace_name      = module.eh_namespace.name
-  resource_group_name = azurerm_resource_group.rg.name
-  partition_count     = 1
-}
-
-module "queue_event_hub" {
-  source  = "snowplow-devops/event-hub/azurerm"
-  version = "0.1.1"
-
-  name                = "${local.name}-queue-topic"
-  namespace_name      = module.eh_namespace.name
-  resource_group_name = azurerm_resource_group.rg.name
-  partition_count     = 1
 }
 
 module "storage_account" {
@@ -79,12 +59,13 @@ module "transformer_service" {
 
   subnet_id = lookup(module.vnet.vnet_subnets_name_id, "pipeline1")
 
-  enriched_topic_name           = module.enriched_event_hub.name
-  enriched_topic_kafka_password = module.enriched_event_hub.read_only_primary_connection_string
-  queue_topic_name              = module.queue_event_hub.name
-  queue_topic_kafka_password    = module.queue_event_hub.read_write_primary_connection_string
-  eh_namespace_name             = module.eh_namespace.name
-  kafka_brokers                 = module.eh_namespace.broker
+  enriched_topic_name           = local.enriched_topic_name
+  enriched_topic_kafka_username = local.kafka_username
+  enriched_topic_kafka_password = local.kafka_password
+  queue_topic_name              = local.queue_topic_name
+  queue_topic_kafka_username    = local.kafka_username
+  queue_topic_kafka_password    = local.kafka_password
+  kafka_brokers                 = local.kafka_brokers
 
   storage_account_name   = module.storage_account.name
   storage_container_name = module.storage_container.name

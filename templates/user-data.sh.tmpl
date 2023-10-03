@@ -24,6 +24,8 @@ sudo docker run \
   --env AZURE_CLIENT_SECRET=${client_secret} \
   --env JDK_JAVA_OPTIONS='${java_opts}' \
   --env INSTANCE_ID=$(get_instance_id) \
+  --env CONSUMER_CLIENT_ID="$${HOSTNAME}" \
+  --env PRODUCER_QUEUE_CLIENT_ID="$${HOSTNAME}-queue" \
   snowplow/transformer-kafka:${version} \
   --iglu-config /snowplow/config/iglu_config.json \
   --config /snowplow/config/config.hocon
