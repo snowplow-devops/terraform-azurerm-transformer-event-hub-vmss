@@ -67,6 +67,8 @@ module "transformer_service" {
   queue_topic_kafka_password    = local.kafka_password
   kafka_brokers                 = local.kafka_brokers
 
+  kafka_source = "confluent_cloud"
+
   storage_account_name   = module.storage_account.name
   storage_container_name = module.storage_container.name
   window_period_min      = local.window_period_min
