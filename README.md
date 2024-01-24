@@ -69,7 +69,7 @@ module "storage_container" {
 
 module "transformer_service" {
   source = "snowplow-devops/transformer-event-hub-vmss/azurerm"
-  
+
   accept_limited_use_license = true
 
   name                = "transformer-server"
@@ -160,7 +160,7 @@ module "transformer_service" {
 | <a name="input_subnet_id"></a> [subnet\_id](#input\_subnet\_id) | The subnet id to deploy the service into | `string` | n/a | yes |
 | <a name="input_window_period_min"></a> [window\_period\_min](#input\_window\_period\_min) | Frequency to emit loading finished message - 5,10,15,20,30,60 etc minutes | `number` | n/a | yes |
 | <a name="input_accept_limited_use_license"></a> [accept\_limited\_use\_license](#input\_accept\_limited\_use\_license) | Acceptance of the SLULA terms (https://docs.snowplow.io/limited-use-license-1.0/) | `bool` | `false` | no |
-| <a name="input_app_version"></a> [app\_version](#input\_app\_version) | Transformer app version to use. This variable facilitates dev flow, the modules may not work with anything other than the default value. | `string` | `"5.7.1"` | no |
+| <a name="input_app_version"></a> [app\_version](#input\_app\_version) | Transformer app version to use. This variable facilitates dev flow, the modules may not work with anything other than the default value. | `string` | `"5.7.5"` | no |
 | <a name="input_associate_public_ip_address"></a> [associate\_public\_ip\_address](#input\_associate\_public\_ip\_address) | Whether to assign a public ip address to this instance | `bool` | `true` | no |
 | <a name="input_custom_iglu_resolvers"></a> [custom\_iglu\_resolvers](#input\_custom\_iglu\_resolvers) | The custom Iglu Resolvers that will be used by Enrichment to resolve and validate events | <pre>list(object({<br>    name            = string<br>    priority        = number<br>    uri             = string<br>    api_key         = string<br>    vendor_prefixes = list(string)<br>  }))</pre> | `[]` | no |
 | <a name="input_default_iglu_resolvers"></a> [default\_iglu\_resolvers](#input\_default\_iglu\_resolvers) | The default Iglu Resolvers that will be used by Enrichment to resolve and validate events | <pre>list(object({<br>    name            = string<br>    priority        = number<br>    uri             = string<br>    api_key         = string<br>    vendor_prefixes = list(string)<br>  }))</pre> | <pre>[<br>  {<br>    "api_key": "",<br>    "name": "Iglu Central",<br>    "priority": 10,<br>    "uri": "http://iglucentral.com",<br>    "vendor_prefixes": []<br>  },<br>  {<br>    "api_key": "",<br>    "name": "Iglu Central - Mirror 01",<br>    "priority": 20,<br>    "uri": "http://mirror01.iglucentral.com",<br>    "vendor_prefixes": []<br>  }<br>]</pre> | no |
