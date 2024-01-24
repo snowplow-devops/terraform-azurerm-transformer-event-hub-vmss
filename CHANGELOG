@@ -1,3 +1,8 @@
+Version 0.3.0 (2024-01-24)
+--------------------------
+Update LICENSE to SLULA (closes #11)
+Bump version to v5.7.5 (closes #12)
+
 Version 0.2.1 (2023-10-16)
 --------------------------
 Update telemetry to capture Kafka Source (#9)
