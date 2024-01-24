@@ -74,6 +74,8 @@ module "vnet" {
 module "transformer_service" {
   source = "../.."
 
+  accept_limited_use_license = true
+
   name                = local.name
   resource_group_name = azurerm_resource_group.rg.name
 
