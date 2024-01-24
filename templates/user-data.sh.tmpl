@@ -23,6 +23,7 @@ sudo docker run \
   --env AZURE_CLIENT_ID=${client_id}  \
   --env AZURE_CLIENT_SECRET=${client_secret} \
   --env JDK_JAVA_OPTIONS='${java_opts}' \
+  --env ACCEPT_LIMITED_USE_LICENSE=${accept_limited_use_license} \
   --env INSTANCE_ID=$(get_instance_id) \
   --env CONSUMER_CLIENT_ID="$${HOSTNAME}" \
   --env PRODUCER_QUEUE_CLIENT_ID="$${HOSTNAME}-queue" \

@@ -225,6 +225,8 @@ locals {
   })
 
   user_data = templatefile("${path.module}/templates/user-data.sh.tmpl", {
+    accept_limited_use_license = var.accept_limited_use_license
+
     tenant_id     = azuread_service_principal.transformer_sp.application_tenant_id
     client_id     = azuread_application.transformer_app_registration.application_id
     client_secret = azuread_application_password.transformer_app_pasword.value
